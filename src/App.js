@@ -65,3 +65,5 @@ const styles = {
   item: { textAlign: 'left' },
   p: { color: '#1809ff' }
 };
+
+export default App;
