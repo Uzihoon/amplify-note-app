@@ -4,7 +4,10 @@ import React, { useEffect, useReducer } from 'react';
 import { listNotes } from './graphql/queries';
 import 'antd/dist/antd.css';
 import { v4 as uuid } from 'uuid';
-import { createNote as CreateNote } from './graphql/mutations';
+import {
+  createNote as CreateNote,
+  deleteNote as DeleteNote
+} from './graphql/mutations';
 
 const initialState = {
   notes: [],
@@ -34,6 +37,26 @@ function reducer(state, action) {
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  const deleteNote = async ({ id }) => {
+    const index = state.notes.findIndex(n => n.id === id);
+    const notes = [
+      ...state.notes.slice(0, index),
+      ...state.notes.slice(index + 1)
+    ];
+
+    dispatch({ type: 'SET_NOTES', notes });
+
+    try {
+      await API.graphql({
+        query: DeleteNote,
+        variables: { input: { id } }
+      });
+      alert('successfully deleted note!');
+    } catch (err) {
+      console.log('error: ', err);
+    }
+  };
 
   const createNote = async () => {
     const { form } = state;
@@ -72,6 +95,21 @@ function App() {
     dispatch({ type: 'SET_INPUT', name, value });
   };
 
+  const renderItem = item => {
+    return (
+      <List.Item
+        style={styles.item}
+        actions={[
+          <p style={styles.p} onClick={() => deleteNote(item)}>
+            Delete
+          </p>
+        ]}
+      >
+        <List.Item.Meta title={item.name} description={item.description} />
+      </List.Item>
+    );
+  };
+
   useEffect(() => {
     fetchNotes();
   }, []);
@@ -101,14 +139,6 @@ function App() {
         renderItem={renderItem}
       />
     </div>
-  );
-}
-
-function renderItem(item) {
-  return (
-    <List.Item style={styles.item}>
-      <List.Item.Meta title={item.name} description={item.description} />
-    </List.Item>
   );
 }
 
