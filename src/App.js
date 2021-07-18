@@ -6,7 +6,8 @@ import 'antd/dist/antd.css';
 import { v4 as uuid } from 'uuid';
 import {
   createNote as CreateNote,
-  deleteNote as DeleteNote
+  deleteNote as DeleteNote,
+  updateNote as UpdateNote
 } from './graphql/mutations';
 
 const initialState = {
@@ -37,6 +38,24 @@ function reducer(state, action) {
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  const updateNote = async note => {
+    const index = state.notes.findIndex(n => n.id === note.id);
+    const notes = [...state.notes];
+    notes[index].completed = !note.completed;
+
+    dispatch({ type: 'SET_NOTES', notes });
+
+    try {
+      await API.graphql({
+        query: UpdateNote,
+        variables: { input: { id: note.id, completed: notes[index].completed } }
+      });
+      alert('note successfully updated!');
+    } catch (err) {
+      console.log('error: ', err);
+    }
+  };
 
   const deleteNote = async ({ id }) => {
     const index = state.notes.findIndex(n => n.id === id);
@@ -102,6 +121,9 @@ function App() {
         actions={[
           <p style={styles.p} onClick={() => deleteNote(item)}>
             Delete
+          </p>,
+          <p style={styles.p} onClick={() => updateNote(item)}>
+            {item.completed ? 'completed' : 'mark completed'}
           </p>
         ]}
       >
@@ -146,7 +168,7 @@ const styles = {
   container: { padding: 20 },
   input: { marginBottom: 10 },
   item: { textAlign: 'left' },
-  p: { color: '#1809ff' }
+  p: { color: '#1809ff', cursor: 'pointer' }
 };
 
 export default App;
